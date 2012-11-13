@@ -1,0 +1,403 @@
+<apex:page controller="ChatterAuditPurgeController" sidebar="false" action="{!checkSetting}" >
+
+	<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+	<title>{!$Label.ChatterAudit_PurgePage_Title}</title>
+
+
+	<apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ui-lightness/jquery-ui-1.8.18.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jqGrid, 'css/ui.jqgrid.css')}" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ChatterAuditStylesheet.css')}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery-1.5.2.min.js')}" />
+	<apex:includeScript value="{!$Resource.ChatterAuditJavascripts}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.CAuditResources, 'js/jquery-ui-1.8.18.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/i18n/grid.locale-en.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery.jqGrid.src.js')}" />
+
+
+
+ 	<script type="text/javascript" >
+ 	
+ 	
+ 	var resFinal;
+	var qString='';
+	var itmsCount =0;
+	var mouseX = 0;
+	var mouseY = 0;	
+	
+	$(document).ready(function() {
+	
+			$(document).mousemove(function(e){
+      				mouseX = e.pageX;
+      				mouseY = e.pageY;
+      				
+      				if ( $('.dialogLoader').length > 0 ){
+      					var optMap = {};
+						optMap['left'] = ( mouseX - ($('.dialogLoader').width()) )+"px";
+						optMap['top'] = mouseY+"px";
+						optMap['cursor'] = "progress";									
+						$('.dialogLoader').css( optMap );
+      				}
+   			}); 
+			
+			//Adding Main Search Types
+			var searchTypes = '<div class="typeOfSearch typeOfSearchSelected" type="public" screen="public">Posts/Comments</div>'+
+		                  	  				'<div class="typeOfSearch" type="private" screen="private">Private Messages</div>';
+			$('.pbTitle').next().append(searchTypes);
+			
+			jQuery("#listPurge").jqGrid({ 
+				url:'/apex/ChatterAuditProxy?a=getPurgeList', 
+				datatype: "json", 
+				colNames:['Type','Body','CreatedDate','ArchivedDate','CreatedBy','Retention','Id'], 
+				colModel:[ 	
+							{name:'Type',		index:'Type', 		width:50,	align:"center", sortable:false, title:false}, 
+							{name:'body',		index:'body', 		width:200,	 sortable:false,classes:"highlightCnt", formatter:wrapTxtFmt, title:false}, 
+							{name:'createdDate',index:'createdDate', width:50,  sortable:false, align:"center", title:false}, 
+							{name:'archivedDate',index:'archivedDate', width:50,  sortable:false, align:"center", title:false}, 
+							{name:'author',index:'author', width:80, align:"left",  sortable:false, title:false},
+							{name:'retention',	index:'retention', width:30, align:"center", sortable:false, editable:true, edittype:'checkbox', editoptions: { value:"Yes: "}, formatter:retBitFmt, title:false, classes:'retBitCheckBox'},
+							{name:'id',	index:'id', width:30,	align:"center", sortable:false, hidden:true}],
+				cellEdit: true,
+				cellsubmit: 'clientArray', 
+				rowNum:20, 
+				jsonReader: {
+				    repeatitems: false,
+				    id: "id",
+				    root : "purgeData",
+				    page: function (obj) { return 1; },
+				    total: function (obj) { return 1; },
+				    records: function (obj) { return ( obj.purgeData != null) ? obj.purgeData.length :0;}
+				},
+				rowList:[20,50,100], 
+				pager: '#pagerPurge', 
+				sortname: 'id', 
+				viewrecords: true, 
+				sortorder: "desc", 
+				loadonce: true,
+				height: 450,
+				autowidth: true,
+				caption:"Result List",
+				gridComplete: function(){ 
+							    itmsCount = jQuery("#listPurge").jqGrid('getGridParam', 'records');
+							    $('span.recordCount').html(itmsCount);
+							    searchUnlock();
+					},
+				afterSaveCell:  function(rowid, cellname, value, iRow, iCol){
+								//Getting row data with info to save to controller
+								var rowData = jQuery("#listPurge").jqGrid('getLocalRow',rowid );
+								retBitHandler(rowData);
+					}
+			 }); 
+							
+				initPurge();			
+		});
+		
+		function closeMessage(){	
+			$('#messagesDiv').hide();
+		}
+		
+		function displayStatusMsg(msg){
+	
+			var msgDivContainer = $('#messagesDiv');
+			var msgDivText = $('#messagesDiv_text');
+			msgDivContainer.removeAttr('class');	
+			msgDivContainer.attr('class', '');
+		
+			if (msg.msg == '' || msg.msg == null){
+			
+				msgDivContainer.hide(); 
+			 
+			}else{
+				msgDivText.html(msg.msg);
+				switch(msg.msgType){
+					case 'warning':msgDivContainer.addClass('warning');
+						break;
+					case 'info':msgDivContainer.addClass('info');
+						break;
+					case 'error': msgDivContainer.addClass('error');
+						break;
+						
+				}
+				msgDivContainer.show();
+			}	
+		}	
+ 	
+		
+				
+		//No implementation needed (only redefined in Search Page to switch grid)
+		function publicMessagesJqGrid(){};
+		function privateMessagesJqGrid() {};
+		
+		function retBitFmt(ArrayValue,opts,rowData){
+			if ( ArrayValue == true ) return "Yes";
+			if ( ArrayValue == false ) return " ";
+			if ( ArrayValue == "Yes" ) return "Yes";
+			if ( ArrayValue == " ") return " ";			
+		}
+		
+		function retBitHandler(rowData){
+			//Stopping all inputs
+			$('input').attr('DISABLED',true);
+			//Showing loading
+			dialogLoader();
+			//Calling Action Function
+			retBitActionFunction( rowData.id, (rowData.retention == "Yes") ? true : false );						
+		}
+		
+		function enableInputsCloseLoader(){
+			//Enable all inputs again
+			$('input').removeAttr('DISABLED');
+			//closeLoader
+			$('.dialogLoader').remove();
+		
+		}
+		
+		function dialogLoader(){
+			$('body').append( " <div class=\"dialogLoader\">Saving... Please Wait</div>  " );
+			var optMap = {};
+			optMap['left'] = ( mouseX - ($('.dialogLoader').width()) )+"px";
+			optMap['top'] = mouseY+"px";
+			
+			$('.dialogLoader').css( optMap );
+		}
+		
+		/* functions to formatting cells  the result table */
+		function idFmatter(ArrayValue, opts, rowData){
+			
+			var linkDetails = '<a target="_blank" style="text-decoration:none;" href="../'+ArrayValue+'">{!$Label.ChatterAudit_SearchPage_tView}</a>';
+			return linkDetails;
+		}
+		
+	
+		/* export all results */
+		
+		var getPurgeList = function(startDate, endDate){
+			
+			var scenario = $('.typeOfSearchSelected').attr("screen");
+			
+			var sUrl = "/apex/ChatterAuditProxy?a=getPurgeList&startDate="+encodeURIComponent(startDate)+"&endDate="+encodeURIComponent(endDate)+"&screen="+encodeURIComponent(scenario); 
+			jQuery("#listPurge").jqGrid('setGridParam',{
+									datatype:'json', 
+									page:1,
+									url:sUrl,
+									loadComplete : function(){ enableExportBtn(textSubmitButton); },
+								}).trigger('reloadGrid');
+		}		
+        var purgeResults = function(startDate, endDate,from){    		
+			
+			var scenario = $('.typeOfSearchSelected').attr("screen");
+			var url = '/apex/ChatterAuditProxy'
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: {
+                	'a'			: 'purgeRecords',
+                    'startDate'	: startDate,
+                    'endDate'	: endDate,
+                    'searchType': scenario
+                },
+                success: function(res){
+                	displayStatusMsg(res );               		
+               		submitFilterRecords();                 
+                }
+            });                       			                   
+        }
+        
+//Initial vars
+var calendarImgUrl    						= "{!JSENCODE (URLFOR($Resource.CAuditResources ,'css/ui-lightness/images/calendar.gif'))}";
+var authorLookupUrl   					= "{!JSENCODE (URLFOR($Page.ChatterAuditLookUp))}";
+
+var invalidDateRange  					= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_invalidDateRange)}";
+var ammountOfRecords  				= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_ammountOfRecords)}";
+var confirmDialog_deleteRecords 	= "{!JSENCODE ($Label.ChatterAudit_ConfirmDialog_deleteRecords)}";
+var textSubmitButton           			= "{!JSENCODE ($Label.ChatterAudit_PurgePage_tSubmit)}";
+var loadingText                 				= "{!JSENCODE ($Label.ChatterAudit_LOADING)}";
+var buttonSearchText            			= "{!JSENCODE ($Label.ChatterAudit_tBSearch)}"; 
+        
+</script>
+
+<style>
+	
+	.helpButtonNewRBit{
+		padding: 8px;
+		margin-left: 4px;
+		font-size: 130%;
+		text-align: right;	
+	}
+	
+	.dialogLoader{
+		position: fixed;
+		width: 120px;
+		-webkit-border-radius: 8px;
+		-moz-border-radius: 8px;
+		border-radius: 8px;
+		padding: 6px;
+		background-color: #1797C0;
+		color: #fff;
+		z-index: 999999;
+	}
+	
+	.retBitCheckBox{
+		cursor: pointer;
+	}
+	
+	.typeOfSearch{
+		-webkit-border-radius: 4px;
+		-moz-border-radius: 4px;
+		border-radius: 4px;
+		border: 1px solid gainsboro;
+		width: 100px;
+		padding: 3px;
+		float: left;
+		text-align: center;
+		margin-right: 5px;
+		cursor: pointer;
+	
+	}
+	
+	.typeOfSearchSelected{
+		background-color: #1797C0;
+		color: #fff;		
+	}
+	
+	#dt_example #container {
+		width: auto !important;
+	}
+	
+	.ui-widget-header {
+		background: none repeat scroll 0 0 #1797C0 !important;
+		border: 1px solid #1797C0;
+		color: #FFFFFF;
+		font-weight: bold;
+	}
+	
+	div.initiallLoadSection {
+		width: 100%;
+		height: 150px;
+		border-style: dashed;
+		border-width: 1px;
+		background-color: #CFEEF8;
+	}
+	
+		.info, .success, .warning, .error, .validation {
+	
+	    font-family:Arial, Helvetica, sans-serif; 
+	    font-size:13px;
+	    border: 1px solid;
+	    margin: 10px 0px;
+	    padding:15px 10px 15px 50px;
+	    background-repeat: no-repeat;
+	    background-position: 10px center;
+	}
+	.info {
+	    color: #00529B;
+	    background-color: #BDE5F8;
+	    background-image: url('info.png');
+	}
+	.success {
+	    color: #4F8A10;
+	    background-color: #DFF2BF;
+	    background-image:url('success.png');
+	}
+	.warning {
+	    color: #9F6000;
+	    background-color: #FEEFB3;
+	    background-image: url('warning.png');
+	}
+	.error {
+	    color: #D8000C;
+	    background-color: #FFBABA;
+	    background-image: url('error.png');
+	}
+	
+	
+</style>
+		
+
+</head>
+
+
+<div class="mainContent">
+	<div id="messagesDiv" style="display:none;padding-right: 20px; height: 65px;">
+	<div id="messagesDiv_text"  style="float:left;"></div>
+	
+	<div id="closeMessagesDiv" onclick="closeMessage()" style="float: right; cursor: pointer;"> close</div>
+	
+	
+	</div>
+	<apex:pageMessages id="errors" />
+	<apex:pageBlock title="{!$Label.ChatterAudit_PurgePage_tFilterByArchivedDate} " mode="edit">
+	<table width="100%" border="0">
+	 <tr>
+	  <td colspan="2" valign="top">
+			<apex:pageBlock mode="edit" id="criteria">
+			
+				<div id="accordion">
+					<div class="pane">
+						<div class="searchLeft" >
+							<div class="block" >
+								<div class="label">{!$Label.ChatterAudit_PurgePage_tDateRange}</div>
+								<div class="labelValue">
+									<div class="floatElm halfSizeElm">
+									  <input class="datepicker inputDate FromDate" title="  From  " type="text" id="startDate" />
+									</div>
+									<div class="floatElm halfSizeElm">
+										<input class="datepicker inputDate ToDate" title="  To  " type="text" id="endDate" />
+									</div>
+								</div>
+							</div>
+							<div class="spacer"></div>
+							<div class="block submit">
+								<input class="btn chatterAuditButton bSelected" id="searchBtn" type="button" value="{!$Label.ChatterAudit_PurgePage_tSearch}" />
+							</div>
+							<div class="block">
+								<label>&nbsp;</label>	</div>
+						</div>
+						<div class="searchRight">
+							<div class="block">
+								<label class="title underlined" >{!$Label.ChatterAudit_PurgePage_tExportAndDumpRecords}</label>
+							</div>
+							<div class="block">
+							  	<div class ="label" style="width:100px;">{!$Label.ChatterAudit_PurgePage_tRecordsFound}</div>
+								  	<apex:outputPanel id="recordCount" layout="block" styleClass="labelValueSmaller">
+								  		<span class="recordCount">-</span>&nbsp;post(s)
+								  	</apex:outputPanel>
+								</div>
+							<div class="spacer"></div>
+							<div class="block submit submitLeft">
+								<input class="btn chatterAuditButton bSelected" id="exportBtn" type="button" value="{!$Label.ChatterAudit_PurgePage_tSubmit}" />
+								<span id="daysAfterTtip_help" class="helpButton">
+									<img class="helpOrb" title="{!$Label.ChatterAudit_PurgePage_tHelpText}" src="/s.gif"/>
+								</span>
+							</div>							
+						</div>
+					</div>
+	  			</div>
+		</apex:pageBlock>
+		</td>
+	</tr>
+	
+  </table>
+  </apex:pageBlock>
+
+	<span class="helpButton" > <div class="helpButtonNewRBit">{!$Label.ChatterAudit_purge_retention_title} <img class="helpOrb" title="{!$Label.ChatterAudit_purge_retention_usage}" src="/s.gif"/> </div></span>
+  </div>
+  
+  <apex:form >
+			<apex:actionFunction name="retBitActionFunction" action="{!retBitActionFunction}"  
+				oncomplete="enableInputsCloseLoader()">
+				<apex:param name="elmId" value="" />				
+				<apex:param name="retention" value="" />
+			</apex:actionFunction>
+	</apex:form>
+
+
+	<table id="listPurge"></table>
+	<div id="pagerPurge"></div>
+
+
+</apex:page>

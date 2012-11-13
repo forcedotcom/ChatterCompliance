@@ -1,0 +1,535 @@
+<apex:page controller="ChatterAuditSearchController" sidebar="false" action="{!checkSetting}">
+
+    <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+    <title>DataTables example</title>
+
+
+    <apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ui-lightness/jquery-ui-1.8.18.custom.css')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.jqGrid, 'css/ui.jqgrid.css')}" />
+
+    <apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ChatterAuditStylesheet.css')}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery-1.5.2.min.js')}" />
+    <apex:includeScript value="{!$Resource.ChatterAuditJavascripts}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.CAuditResources, 'js/jquery-ui-1.8.18.custom.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.CAuditResources, 'js/jquery-ui-timepicker-addon.js')}" /> 
+    <apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/i18n/grid.locale-en.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery.jqGrid.src.js')}" />
+
+    <script>
+    var qString='';
+    var itmsCount =0;
+    var searchStr = '{!JSENCODE(searchStr)}';
+    $(document).ready(function() {
+    
+    	if ( preloadingActive == "true" ){
+    		$('#preloadingDiv').fadeIn();   	
+    	}
+    	
+    	if ( customSOk == "false"){
+    		$('#customSOkDiv').fadeIn();
+    	}
+    
+        //Adding Main Search Types
+        var searchTypes = '<div class="typeOfSearch typeOfSearchSelected" type="public" screen="s0">Posts/Comments</div>'+
+                          '<div class="typeOfSearch" type="private" screen="sp">Private Messages</div>';
+        $('.pbTitle').next().append(searchTypes);               
+                    publicMessagesJqGrid();
+                    initSearch();                           
+    });     
+        
+    function closeMessage(){    
+        $('#messagesDiv').hide();
+    }   
+    
+    function displayStatusMsg(msg){
+    
+        var msgDivContainer = $('#messagesDiv');
+        var msgDivText = $('#messagesDiv_text');
+        msgDivContainer.removeAttr('class');    
+        msgDivContainer.attr('class', '');
+    
+        if (msg.msg == '' || msg.msg == null){
+        
+            msgDivContainer.hide(); 
+         
+        }else{
+            msgDivText.html(msg.msg);
+            msgDivContainer.addClass('warning');
+            msgDivContainer.show();
+        }   
+    }   
+    
+    var highlightSearchStringSearchPage = function (){
+            if (searchStr != ''){
+                $('#list2 .highlightCnt').highlight(searchStr);
+            }
+    }
+    
+        function idFmatter(ArrayValue, opts, rowData){
+            
+            var linkDetails = '<a target="_blank" style="text-decoration:none;" href="../'+ArrayValue+'">{!$Label.ChatterAudit_SearchPage_tView}</a>';
+            return linkDetails;
+        }
+        
+        function recordFmatter(ArrayValue, opts, rowData){
+            var js_action = '';
+        
+            if (ArrayValue.url != '' && ArrayValue.url != null){
+                js_action = ArrayValue.url;
+            }else{
+                js_action = 'javascript:;';
+            }
+            var linkDetails = '<a target="_blank" style="text-decoration:none;" href="'+js_action+'">'+ArrayValue.name+'</a>';
+            return linkDetails;
+        
+        }
+        
+        function nameFmatter(ArrayValue, opts, rowData){
+
+            var js_action = '';
+        
+            if (ArrayValue.url != '' && ArrayValue.url != null){
+                js_action = ArrayValue.url;
+            }else{
+                js_action = 'javascript:;';
+            }
+            var linkDetails = '<a target="_blank" style="text-decoration:none;" href="'+js_action+'">'+ArrayValue.name+'</a>';
+            return linkDetails;
+        }
+        
+                
+
+        var searchServer = function(p){
+    
+            qString = jQuery.param(p);  
+            var sUrl = "/apex/ChatterAuditProxy?a=search&"+qString; 
+            jQuery("#list2").jqGrid('setGridParam',{
+                                    datatype:'json', 
+                                    page:1,
+                                    url:sUrl
+                                }).trigger('reloadGrid');  
+        
+        }
+    
+        /* export all results */
+        var exportResult = function(from){
+        
+            var exMsg = $('#exportBtn').val();
+            $('#exportBtn').attr("disabled",true).val("Please wait...");
+            
+            var indexList = jQuery.param(jQuery("#list2").jqGrid('getGridParam','_index'));
+            var idSet = '';
+            //build query string
+            var theType = $('.typeOfSearchSelected').attr("type");
+            for ( o in jQuery("#list2").jqGrid('getGridParam','_index')){
+                idSet +=','+ o;
+            }
+            
+            var url = '/apex/ChatterAuditProxy?'+qString;
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: {
+                    'a'                 :   from,
+                    'idSet'             :   idSet,
+                    'searchType'        :   theType
+                },
+                success: function(res){
+                    displayStatusMsg(res );
+                    $('#exportBtn').attr("disabled",false).val(exMsg);
+                }
+            });
+        }
+        
+   function publicMessagesJqGrid(){
+    jQuery("#list2").jqGrid({ 
+                url:'/apex/ChatterAuditProxy?a=search', 
+                datatype: "local", 
+                colNames:[  '{!$Label.ChatterAudit_SearchPage_tView}',
+                            '{!$Label.ChatterAudit_SearchPage_tView_Chatter_Record}',
+                            '{!$ObjectType.ArchivedFeedItem__c.fields.Type__c.label}',
+                            '{!$Label.ChatterAudit_Parent}', 
+                            '{!$Label.ChatterAudit_SearchPage_tBody}', 
+                            '{!$ObjectType.ArchivedFeedItem__c.fields.CreatedDate__c.label}',
+                            '{!$ObjectType.ArchivedFeedItem__c.fields.Created_By__c.label}'], 
+                colModel:[  
+                            {name:'recordId',   index:'recordId',       width:25,   align:"center", sortable:false,formatter:idFmatter}, 
+                            {name:'chatterLink',index:'chatterLink',    width:25,   align:"center", sortable:false,formatter:nameFmatter}, 
+                            {name:'Type',       index:'Type',           width:25,   align:"center", sortable:true,  sorttype:"text"}, 
+                            {name:'parentType', index:'parentType',     width:80,   align:"center", sortable:false,formatter:nameFmatter}, 
+                            {name:'body',       index:'body',           width:200,  align:"left",   sortable:false, classes:"highlightCnt"}, 
+                            {name:'createdDate',index:'createdDate',    width:50,   align:"center",     sortable:true,  sorttype: "date", datefmt: "m/d/Y h:i:s", formatoptions: {newformat:'d-M-Y'}},
+                            {name:'author',     index:'author',         width:80,   align:"left",   sortable:false, sorttype:"text", formatter:nameFmatter}],
+                rowNum:30, 
+                jsonReader: {
+                    root: "searchData",
+                    repeatitems: false,
+                    id: "id",
+                    page: function (obj) { return 1; },
+                    total: function (obj) { return 1; },
+                    records: function (obj) { 
+                    
+                        displayStatusMsg(obj );
+                        
+                        return ( obj.searchData != null) ? obj.searchData.length :0; 
+                    }
+                },
+                rowList:[30,50,100 ], 
+                pager: '#pager2', 
+                sortname: 'id', 
+                viewrecords: true, 
+                sortorder: "desc", 
+                loadonce: true,
+                height: 450,
+                autowidth: true,
+                caption:"Result List",
+                gridComplete: function(){ 
+                                itmsCount = jQuery("#list2").jqGrid('getGridParam', 'records');
+                                $('span.recordCount').html(itmsCount);
+                                highlightSearchStringSearchPage();
+                                searchUnlock();
+                        }
+             }); 
+    }
+    
+    function privateMessagesJqGrid(){
+        jQuery("#list2").jqGrid({ 
+                url:'/apex/ChatterAuditProxy?a=search&typeOfSearch=private', 
+                datatype: "local", 
+                colNames:[  'Archived Message',
+                            'Created By',
+                            'Body',
+                            'Sent Date'],                            
+                colModel:[                          
+                            {name:'chatterLink',index:'chatterLink', width:25, align:"center",  sortable:false, formatter:recordFmatter},
+                            {name:'author',     index:'author', align:"center", width:55,   sortable:false, formatter:nameFmatter}, 
+                            {name:'body',       index:'body', align:"left", width:200, sortable:false,  classes:"highlightCnt", formatter: wrapTxtFmt},
+                            {name:'createdDate',index:'createdDate', align:"center", width:50,  sortable:true,      sorttype: "date", datefmt: "m/d/Y h:i:s", formatoptions: {newformat:'d-M-Y'}}],
+                rowNum:25, 
+                jsonReader: {
+                    root: "searchData",
+                    repeatitems: false,
+                    id: "id",
+                    page: function (obj) { return 1; },
+                    total: function (obj) { return 1; },
+                    records: function (obj) { 
+                            
+                        return ( obj.searchData != null) ? obj.searchData.length :0; 
+                    }
+                },
+                rowList:[25,50,100 ], 
+                pager: '#pager2', 
+                sortname: 'id', 
+                viewrecords: true, 
+                sortorder: "desc", 
+                loadonce: true,
+                height: 450,
+                autowidth: true,
+                caption:"Result List",
+                gridComplete: function(){ 
+                                itmsCount = jQuery("#list2").jqGrid('getGridParam', 'records');
+                                $('span.recordCount').html(itmsCount);
+                                highlightSearchStringSearchPage();
+                                searchUnlock();
+                        }
+             });    
+    }   
+        
+    </script>
+
+    <style>
+    .typeOfSearch{
+        -webkit-border-radius: 4px;
+        -moz-border-radius: 4px;
+        border-radius: 4px;
+        border: 1px solid gainsboro;
+        width: 100px;
+        padding: 3px;
+        float: left;
+        text-align: center;
+        margin-right: 5px;
+        cursor: pointer;
+    
+    }
+    
+    .typeOfSearchSelected{
+        background-color: #1797C0;
+        color: #fff;        
+    }
+    
+    #dt_example #container {
+        width: auto !important;
+    }
+    
+    .ui-widget-header {
+        background: none repeat scroll 0 0 #1797C0 !important;
+        border: 1px solid #1797C0;
+        color: #FFFFFF;
+        font-weight: bold;
+    }
+    
+    div.initiallLoadSection {
+        width: 100%;
+        height: 150px;
+        border-style: dashed;
+        border-width: 1px;
+        background-color: #CFEEF8;
+    } 
+
+    .info, .success, .warning, .error, .validation {
+    
+        font-family:Arial, Helvetica, sans-serif; 
+        font-size:13px;
+        border: 1px solid;
+        margin: 10px 0px;
+        padding:15px 10px 15px 50px;
+        background-repeat: no-repeat;
+        background-position: 10px center;
+    }
+    .info {
+        color: #00529B;
+        background-color: #BDE5F8;
+        background-image: url('info.png');
+    }
+    .success {
+        color: #4F8A10;
+        background-color: #DFF2BF;
+        background-image:url('success.png');
+    }
+    .warning {
+        color: #9F6000;
+        background-color: #FEEFB3;
+        background-image: url('warning.png');
+    }
+    .error {
+        color: #D8000C;
+        background-color: #FFBABA;
+        background-image: url('error.png');
+    }
+
+</style>
+    
+    <script>
+    
+    //Initial vars
+    var calendarImgUrl      			= "{!JSENCODE (URLFOR($Resource.CAuditResources ,'css/ui-lightness/images/calendar.gif'))}";
+    var authorLookupUrl     			= "{!JSENCODE (URLFOR($Page.ChatterAuditLookUp))}";
+    var noRecordsToExport	   	= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_noRecordsToExport)}";
+    var atLeastTwoChars     		= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_mustContainTwoChars)}";
+    var atMostThousandChars 	= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_mostThousandChars)}";
+    var choosAUser          			= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_chooseAUser)}";
+    var choosAnOption       			= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_chooseAnOption)}";
+    var choosAPair          				= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_chooseAPairOfUsers)}";
+    var choosAGroup         			= "{!JSENCODE ($Label.ChatterAudit_ErrorMessages_chooseAGroup)}";
+    var loadingText         				= "{!JSENCODE ($Label.ChatterAudit_LOADING)}";
+    var buttonSearchText    			= "{!JSENCODE ($Label.ChatterAudit_tBSearch)}";
+    var preloadingActive				= "{!IsPreloadingActive}";
+    var customSOk 						= "{!customSOk}";
+    </script>
+
+
+    </head>
+    <div id="messagesDiv" style="display:none;padding-right: 20px; height: 65px;">
+    <div id="messagesDiv_text"  style="float:left;"></div>
+    <div id="closeMessagesDiv" onclick="closeMessage()" style="float: right; cursor: pointer;"> close</div>
+    </div>
+    <div id="preloadingDiv" style="display:none;margin-bottom:5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px; background-color:#FFCC33;">
+    <div id="preloadingDiv_text"  style="color:#000;padding:8px;font-weight:bold;">
+    	{!$Label.preloadingText}
+    </div></div>
+    <div id="customSOkDiv" style="display:none;margin-bottom:5px; -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px; background-color:#FFCC33;">
+    <div id="customSOk_text"  style="color:#000;font-weight:bold;padding:8px;">
+    	{!$Label.customSOk}
+    </div></div>
+    <apex:form >
+    
+    <apex:actionFunction name="startLoading"
+                        action="{!startLoading}"
+                        rerender="initiallDataLoadWrapper,results"
+                        oncomplete="alert('{!$Label.ChatterAudit_importChatterDataBtn_alert}');">
+    </apex:actionFunction>
+    
+    </apex:form>
+    
+    <!--  search & export form -->
+
+    <apex:pageBlock title="{!$Label.ChatterAudit_SearchPage_tsearchAndExportFilterOptionsTitle}"
+        mode="edit">
+        <apex:pageMessages id="errors" />
+
+
+        <table width="100%" border="0">
+            <tr>
+                <td colspan="2" valign="top">
+
+                <div id="accordion">
+                <div class="pane">
+                <div class="searchLeft">
+                <div class="block">
+                <div class="label">{!$Label.ChatterAudit_SearchPage_tSearch}</div>
+                <div class="labelValue">
+                <div class="floatElm">
+                    <textarea class="input searchPostComments" title="  Post  " type="text" id="itemBody" />
+                </div>
+                </div>
+                </div>
+                <div class="block datesPicker">
+                    <div class="label">{!$Label.ChatterAudit_SearchPage_tDateRange}</div>
+                    <div class="labelValue">
+                        <div class="floatElm halfSizeElm">
+                            <input class="datepicker inputDate FromDate" title="  From  " type="text" id="startDate" />
+                        </div>
+                        <div class="floatElm halfSizeElm">
+                            <input class="datepicker inputDate ToDate" title="  To  " type="text" id="endDate" />
+                        </div>
+                    </div>
+                </div>
+                <div class="spacer"></div>
+                <div class="spacer"></div>
+                <div class="block involving">
+                <div class="label">{!$Label.ChatterAudit_SearchPage_tInvolving}</div>
+                <div class="labelValue">
+                <div class="floatElm quarterSizeElm">
+                    <input type="radio" name="involving" value="s0" class="allPeopleRadio" checked="checked" /> 
+                    {!$Label.ChatterAudit_SearchPage_tAllUsers}
+                </div>
+                <div class="floatElm quarterSizeElm"><input type="radio"
+                    name="involving" value="s1" class="onePeopleRadio" />
+                {!$Label.ChatterAudit_SearchPage_tOneUser}</div>
+                <div class="floatElm quarterSizeElm"><input type="radio"
+                    name="involving" value="s2" class="twoPeopleRadio" />
+                {!$Label.ChatterAudit_SearchPage_tTwoUsers}</div>
+                <div class="floatElm quarterSizeElm"><input type="radio"
+                    name="involving" value="s3" class="groupRadio" />
+                {!$Label.ChatterAudit_SearchPage_tGroup}</div>
+                </div>
+                </div>
+                <div class="spacer"></div>
+                <div class="block userContainer">
+                <div class="label">{!$Label.ChatterAudit_SearchPage_tUser}</div>
+                <div class="labelValue">
+                <div class="floatElm halfSizeElm">
+                <div class="personOneContainer"><input type="text"
+                    title="  Name  " class="input AuthorName" id="itemInsertedByName"
+                    onchange="javascript:cleanField('itemInsertedById');" /> <a
+                    href="javascript:;" onclick="javascript:displayLookUp(1);"
+                    class="noUnderline"> <img class="lookupIcon" src="/s.gif" />
+                </a> <a href="javascript:;" onclick="javascript:setLookupName('','',1);"
+                    class="noUnderline"> <img class="trashIcon" src="/s.gif" /> </a>
+                <span class="spanlookupHidden"><input id="itemInsertedById"
+                    type="hidden" /></span></div>
+                </div>
+                <div class="floatElm halfSizeElm">
+                <div class="personTwoContainer"><input type="text"
+                    class="input SecondAuthorName" title="  Second Author Name  "
+                    id="itemInsertedByNameTwo"
+                    onchange="javascript:cleanField('itemInsertedByIdTwo');" /> <a
+                    href="javascript:;" onclick="javascript:displayLookUp(2);"
+                    class="noUnderline"> <img class="lookupIcon" src="/s.gif" /> </a>
+                <a href="javascript:;" onclick="javascript:setLookupName('','',2);"
+                    class="noUnderline"> <img class="trashIcon" src="/s.gif" /> </a>
+                <span class="spanlookupHidden2"><input
+                    id="itemInsertedByIdTwo" type="hidden" /></span></div>
+                </div>
+                </div>
+                </div>
+                <div class="spacer"></div>
+                <div class="block groupContainer">
+                <div class="label">Group</div>
+                <div class="labelValue"><input type="text" title="  Name  "
+                    class="input GroupName" id="itemGroupName"
+                    onchange="javascript:cleanField('itemGroupId');" /> <a
+                    href="javascript:;" onclick="javascript:displayLookUp(3);"
+                    class="noUnderline"> <img class="lookupIcon" src="/s.gif" />
+                </a> <a href="javascript:;" onclick="javascript:setLookupName('','',3);"
+                    class="noUnderline"> <img class="trashIcon" src="/s.gif" /> </a>
+                <span class="spanlookupHidden3"><input id="itemGroupId"
+                    type="hidden" /></span></div>
+                </div>
+                <div class="block checkboxesOnePersonContainer">
+                <div class="label">{!$Label.ChatterAudit_SearchPage_tOptions}</div>
+                <div class="labelValue"><input type="checkbox" name="s1opt1"
+                    value="s1opt1" checked="checked" />
+                {!$Label.ChatterAudit_SearchPage_tUserCreatedthePostComment} <br />
+                <input type="checkbox" name="s1opt2" value="s1opt2" />
+                {!$Label.ChatterAudit_SearchPage_tPoststouserswallbyothers} <br />
+                <input type="checkbox" name="s1opt3" value="s1opt3" />
+                {!$Label.ChatterAudit_SearchPage_tPostsandCommentsongroupsuserbelongsto}
+                <br />
+                <input type="checkbox" name="s1opt4" value="s1opt4" />
+                {!$Label.ChatterAudit_Search_tPostsandCommentsonprofilesofusersselecteduserisfollowing}
+                <br />
+                </div>
+                </div>
+                <div class="block checkboxesTwoPersonContainer">
+                <div class="label">Options</div>
+                <div class="labelValue"><input type="checkbox" name="s2opt1"
+                    value="Posts made by user 1 on user 2's profile and viceversa"
+                    checked="checked" />
+                {!$Label.ChatterAudit_SearchPage_tPostsmadebyuserOneonuserTwosprofileandviceversa}
+                <br />
+                <input type="checkbox" name="s2opt2"
+                    value="Posts were user 1 and user 2 have interacted" />
+                {!$Label.ChatterAudit_SearchPage_tPostswereuserOneanduserTwohaveinteracted}
+                <br />
+                </div>
+                </div>
+                <div class="spacer"></div>
+                <div class="block submit"><input
+                    class="btn chatterAuditButton bSelected" id="searchBtn"
+                    type="button" value="{!$Label.ChatterAudit_SearchPage_tBSearch}" />
+                </div>
+                <div class="block"><label>&nbsp;</label></div>
+                </div>
+                <div class="searchRight">
+                <div class="block"><label class="title underlined">{!$Label.ChatterAudit_SearchPage_tExportRecords}</label>
+                </div>
+                <div class="block">
+                <div class="label" style="width:100px;">{!$Label.ChatterAudit_SearchPage_tRecordsFound}</div>
+                <apex:outputPanel id="recordCount" layout="block"
+                    styleClass="labelValueSmaller">
+                                        <span class="recordCount">-</span>&nbsp;post(s)
+                                    </apex:outputPanel></div>
+                <div class="spacer"></div>
+                <div class="block">
+                <div class="label">{!$Label.ChatterAudit_SearchPage_tFileFormat}</div>
+                <div class="labelValueSmaller">
+                <div class="xlsExportViewBox"><input type="radio"
+                    name="exportFormat" value="csvQuick" checked="true" />{!$Label.ChatterAudit_SearchPage_tQuickView}
+                <span id="daysAfterTtip_help" class="helpButton"> <img
+                    class="helpOrb"
+                    title="{!$Label.ChatterAudit_SearchPage_tHelpTextXlsQuick}"
+                    src="/s.gif" /> </span> <br />
+                <div class="inputExportFullDiv">
+                <input type="radio" name="exportFormat" value="csvFull" />{!$Label.ChatterAudit_SearchPage_tCompleteView}
+                <span id="daysAfterTtip_help" class="helpButton"> <img
+                    class="helpOrb"
+                    title="{!$Label.ChatterAudit_SearchPage_tHelpTextXlsComplete}"
+                    src="/s.gif" /> </span></div>
+                </div>
+                </div>
+                </div>
+                <div class="block submit submitLeft"><input
+                    class="btn chatterAuditButton bSelected" id="exportBtn"
+                    type="button" value="{!$Label.ChatterAudit_SearchPage_tExport}" />
+                <span id="daysAfterTtip_help" class="helpButton"> <img
+                    class="helpOrb" title="{!$Label.ChatterAudit_SearchPage_tHelpText}"
+                    src="/s.gif" /> </span></div>
+                </div>
+                </div>
+                </div>
+
+                </td>
+            </tr>
+        </table>
+    </apex:pageBlock>
+
+
+    <div class="detailContent noDisplayPaddingFivePx"></div>
+    <table id="list2"></table>
+    <div id="pager2"></div>
+</apex:page>

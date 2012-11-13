@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOverrides>
+        <actionName>Accept</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Clone</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Delete</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Edit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>List</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>New</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Tab</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
+    <enableActivities>false</enableActivities>
+    <enableEnhancedLookup>false</enableEnhancedLookup>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <fields>
+        <fullName>ArchivedEntityFeed__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Archived Entity Feed</label>
+        <referenceTo>ArchivedEntityFeed__c</referenceTo>
+        <relationshipLabel>Archived Feed Items</relationshipLabel>
+        <relationshipName>ArchivedFeedItems</relationshipName>
+        <required>false</required>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>Body__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The content of the FeedItem beign Archived. Required when Type is TextPost. Optional when Type is ContentPost or LinkPost. This is the message that appears in the feed.</description>
+        <externalId>false</externalId>
+        <label>Body</label>
+        <length>32000</length>
+        <type>LongTextArea</type>
+        <visibleLines>5</visibleLines>
+    </fields>
+    <fields>
+        <fullName>Chatter_Record__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>IF( TEXT(Type__c) == &apos;UserPost&apos;,
+HYPERLINK( &apos;_ui/core/userprofile/UserProfilePage?u=&apos;&amp; ParentId__c &amp;&apos;&amp;ChatterFeedItemId=&apos;&amp; FeedItemId__c , &apos;Chatter Record&apos;)
+,HYPERLINK( ParentId__c&amp;&apos;?ChatterFeedItemId=&apos;&amp; FeedItemId__c ,  &apos;Chatter Record&apos;))</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Chatter Record</label>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>CommentCount__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Comment Count</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>ContentDescription__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The description of the file uploaded in ContentData.</description>
+        <externalId>false</externalId>
+        <label>ContentDescription</label>
+        <length>32768</length>
+        <type>LongTextArea</type>
+        <visibleLines>3</visibleLines>
+    </fields>
+    <fields>
+        <fullName>ContentFileName__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The file uploaded to the feed. Required if Type is ContentPost. The name of the file uploaded to the feed. Setting ContentFileName automatically sets Type to ContentPost.</description>
+        <externalId>false</externalId>
+        <label>ContentFileName</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>ContentSize__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Content Size</label>
+        <precision>18</precision>
+        <required>false</required>
+        <scale>0</scale>
+        <type>Number</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>ContentType__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Content Type</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>CreatedDate__c</fullName>
+        <deprecated>false</deprecated>
+        <description>FeedItem Created Date</description>
+        <externalId>false</externalId>
+        <label>Created Date</label>
+        <required>false</required>
+        <type>DateTime</type>
+    </fields>
+    <fields>
+        <fullName>Created_By__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Created By</label>
+        <referenceTo>User</referenceTo>
+        <relationshipName>Archived_Feed_Items</relationshipName>
+        <required>false</required>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>FeedItemId__c</fullName>
+        <caseSensitive>false</caseSensitive>
+        <deprecated>false</deprecated>
+        <externalId>true</externalId>
+        <label>FeedItemId</label>
+        <length>20</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>true</unique>
+    </fields>
+    <fields>
+        <fullName>FullArchivedCommentList__c</fullName>
+        <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
+        <description>When true, this flag indicates that all the comments in this post had been already archived.</description>
+        <externalId>false</externalId>
+        <label>Full archived comment list</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>GroupName__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>ArchivedEntityFeed__r.Name</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Parent Name</label>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Inserted_By__c</fullName>
+        <deleteConstraint>SetNull</deleteConstraint>
+        <deprecated>false</deprecated>
+        <description>Contains the value of the field InsertedById on the original FeedItem</description>
+        <externalId>false</externalId>
+        <label>Feed Item Inserted By</label>
+        <referenceTo>User</referenceTo>
+        <relationshipName>Archived_Feed_Items_Inserted</relationshipName>
+        <required>false</required>
+        <type>Lookup</type>
+    </fields>
+    <fields>
+        <fullName>LinkUrl__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>LinkUrl</label>
+        <length>1000</length>
+        <type>LongTextArea</type>
+        <visibleLines>3</visibleLines>
+    </fields>
+    <fields>
+        <fullName>ParentId__c</fullName>
+        <deprecated>false</deprecated>
+        <description>ID of the object type to which the FeedItem is related. For example, set the ParentId to a UserId to post to someone’s profile feed, or an AccountId to post to a specific account.</description>
+        <externalId>false</externalId>
+        <label>ParentId</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>ParentObjectType__c</fullName>
+        <deprecated>false</deprecated>
+        <description>Object type  to which the FeedItem is related. For example, set the ParentId to an Account if the post was on a specific account.</description>
+        <externalId>false</externalId>
+        <label>ParentObjectType</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Parent_Object__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>HYPERLINK(   ParentId__c,  GroupName__c)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Parent Object</label>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>RelatedRecordId__c</fullName>
+        <deprecated>false</deprecated>
+        <description>ID of the ContentVersion object associated with a ContentPost. This field is null for all posts except ContentPost.
+For example, set the RelatedRecordId to an existing ContentVersion and post it to a feed as a FeedItem object of TypeContentPost.</description>
+        <externalId>false</externalId>
+        <label>RelatedRecordId</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>RelatedRecord__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>IF(  TEXT(Type__c)  =&apos;ContentPost&apos;,  
+HYPERLINK( RelatedRecordId__c  ,   ContentFileName__c  )  , 
+ContentFileName__c)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Related Record</label>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Title__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Title</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Type__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Type</label>
+        <picklist>
+            <picklistValues>
+                <fullName>UserStatus</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>TrackedChange</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>TextPost</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>LinkPost</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>ContentPost</fullName>
+                <default>false</default>
+            </picklistValues>
+            <sorted>false</sorted>
+        </picklist>
+        <type>Picklist</type>
+    </fields>
+    <fields>
+        <fullName>isDeleted__c</fullName>
+        <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
+        <description>This field indicates wether if the real FeddItem record is present or not in chatter Application</description>
+        <externalId>false</externalId>
+        <label>isDeleted</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>isParentDeleted__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <formula>IF(ArchivedEntityFeed__r.isDeleted__c, &apos;true&apos;,&apos;false&apos;)</formula>
+        <formulaTreatBlanksAs>BlankAsZero</formulaTreatBlanksAs>
+        <label>Parent is Deleted</label>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>retentionBit__c</fullName>
+        <defaultValue>false</defaultValue>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>retentionBit</label>
+        <type>Checkbox</type>
+    </fields>
+    <label>Archived Feed Item</label>
+    <listViews>
+        <fullName>All</fullName>
+        <columns>ParentId__c</columns>
+        <columns>Body__c</columns>
+        <columns>OBJECT_ID</columns>
+        <columns>isDeleted__c</columns>
+        <filterScope>Everything</filterScope>
+        <label>All</label>
+    </listViews>
+    <nameField>
+        <label>ArchivedFeedItem Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Archived Feed Items</pluralLabel>
+    <searchLayouts>
+        <excludedStandardButtons>New</excludedStandardButtons>
+        <excludedStandardButtons>ChangeOwner</excludedStandardButtons>
+        <excludedStandardButtons>Accept</excludedStandardButtons>
+        <searchFilterFields>NAME</searchFilterFields>
+    </searchLayouts>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

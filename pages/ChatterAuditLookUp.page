@@ -1,0 +1,146 @@
+<apex:page id="ChatterAuditLookUp" controller="ChatterAuditLookUpController" sidebar="false" showHeader="false" >
+
+	<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+	<title>Author's Lookup</title>
+
+
+	<apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ui-lightness/jquery-ui-1.8.18.custom.css')}" />
+	<apex:stylesheet value="{!URLFOR($Resource.jqGrid, 'css/ui.jqgrid.css')}" />
+
+	<apex:stylesheet value="{!URLFOR($Resource.CAuditResources,'css/ChatterAuditStylesheet.css')}" />
+
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery-1.5.2.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.CAuditResources, 'js/jquery-ui-1.8.18.custom.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/i18n/grid.locale-en.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.jqGrid, 'js/jquery.jqGrid.src.js')}" />
+	<apex:includeScript value="{!$Resource.ChatterAuditJavascripts}" />
+
+	<script>
+	
+	var qString='';
+	var lkUptype;
+	var nameCannotBeEmpty = "{!$Label.ChatterAudit_ErrorMessages_nameCannotBeEmpty}";
+	
+	var uName='';
+	$(document).ready(function() {
+			
+			
+		 lkUptype	= gup('type');
+		 uName		= gup('uName');
+		
+		$('#search_criteria').val(unescape(uName));
+			
+		jQuery("#listItems").jqGrid({ 
+			url:'/apex/ChatterAuditProxy?a=lookUp&type='+encodeURIComponent(lkUptype)+'&uName='+encodeURIComponent(uName), 
+			datatype: "json", 
+			colNames:[	'{!$Label.ChatterAudit_LookUpPage_TName}', 
+						'Details '], 
+			colModel:[ 	 
+						{name:'col1',	index:'col1',			width:25,	align:"center", sortable:false,formatter:nameFmatter}, 
+						{name:'col4',	index:'col4', 			width:25,	align:"center", sortable:false}],
+			rowNum:25, 
+			jsonReader: {
+			    repeatitems: false,
+			    id: "id",
+			    root : "lkUpData",
+			    page: function (obj) { return 1; },
+			    total: function (obj) { return 1; },
+			    records: function (obj) { return obj.lkUpData.length; }
+			},
+			rowList:[25,50,100 ], 
+			pager: '#pagerlistItems', 
+			sortname: 'id', 
+			viewrecords: true, 
+			sortorder: "desc", 
+			loadonce: true,
+			height: 300,
+			autowidth: true,
+			caption:"Result List",
+			gridComplete: function(){ 
+						    highlightSearchStringSearchPage();
+					}
+		 }); 
+						
+		});
+		
+		var highlightSearchStringSearchPage = function (){
+				if (searchStr != ''){
+					$('#listlistItems .highlightCnt').highlight(searchStr);
+				}
+		}
+		
+		
+		
+		/* functions to formatting cells  the result table */
+		
+		
+		function nameFmatter(ArrayValue, opts, rowData){
+
+			var js_action = 'nameSelected("'+rowData.id+'","'+rowData.col1+'")';
+			
+			var linkDetails = "<a target='_blank' style='text-decoration:none;'  onclick ='" +js_action+"'>"+rowData.col1+"</a>";
+			return linkDetails;
+		}
+		
+				
+
+		var search = function(uName){
+			var sUrl = '/apex/ChatterAuditProxy?a=lookUp&type='+encodeURIComponent(lkUptype)+'&uName='+encodeURIComponent(uName); 
+			jQuery("#listItems").jqGrid('setGridParam',{
+									datatype:'json', 
+									page:1,
+									url:sUrl
+								}).trigger('reloadGrid');  
+		
+		}
+	
+	</script>
+
+	<style>
+	#dt_example #container {
+		width: auto !important;
+	}
+	
+	.ui-widget-header {
+		background: none repeat scroll 0 0 #1797C0 !important;
+		border: 1px solid #1797C0;
+		color: #FFFFFF;
+		font-weight: bold;
+	}
+	
+	
+	</style>
+	
+
+	</head>
+
+	<!--  header -->
+
+<div id="contentBandTop" class="ContentBandLookUp noPadding alignLeft" style="height:30px;">
+	<div id="SearchBox" class="SearchBoxLookUp">
+	<table>
+		<tbody><tr>
+			<td>
+			  <input type="text" onkeypress="" name="search_criteria" id="search_criteria"  class="inputLookUpBorder" />
+			</td>
+			<td class="padding3Px">
+			<input type="button" value="Filter" onclick="searchByName()" name="linkSearch" id="linkSearch" class="btn floatElmRight font12px" />
+			</td>
+			<td class="padding3Px">
+			 <input id="showAllUsers" type="button" value="Show All Items" onclick="displayAll();" class="btn font12px" />
+			</td>
+		</tr>
+	</tbody>
+	</table>
+   </div>
+   </div>
+
+
+	
+
+	<div class="detailContent noDisplayPaddingFivePx" style="clear:both;"></div>
+	<table id="listItems"></table>
+	<div id="pagerlistItems"></div>
+</apex:page>

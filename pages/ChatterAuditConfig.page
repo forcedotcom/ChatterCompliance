@@ -1,0 +1,590 @@
+<apex:page Controller="ChatterAuditConfigController" sidebar="false"
+	action="{!checkSetting}">
+
+
+	<apex:stylesheet value="{!URLFOR($Resource.Config,'jquery-ui-1.8.19.custom.css')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Config, 'jquery-1.7.2.min.js')}" />
+	<apex:includeScript value="{!URLFOR($Resource.Config, 'jquery-ui-1.8.19.custom.min.js')}" />
+	<apex:includeScript value="{!$Resource.ChatterAuditJavascripts}" />
+
+	<script type="text/javascript">
+			var ownerId 				= '{!JSENCODE(ownerId)}';
+			var prevChatterDataLoaded 	= '{!JSENCODE(prevChatterDataLoaded)}';
+			var contentBlocker 			= '{!JSENCODE(contentBlocker)}';
+			var pmFreq 					= '{!JSENCODE(pmFreq)}' == "" ? "1" : '{!JSENCODE(pmFreq)}';
+			var batchFreq				= '{!JSENCODE(batchFreq)}' == "" ? "1" : '{!JSENCODE(batchFreq)}';
+			var batchStatus				= '{!JSENCODE(batchIsActive)}';		
+		$(document).ready(function(){		
+			$( "#tabs" ).tabs();			
+			$('.pmResetLastExecutionDate').hover(function(){
+				$(this).addClass("pmResetLastExecutionDateHover");
+			},function(){
+				$(this).removeClass("pmResetLastExecutionDateHover");
+			})
+			.click(function(){
+				resetLastExecution();				
+			});
+			
+			$('.batchStatus').hover(function(){
+				$(this).addClass("batchStatusHover");
+			},function(){
+				$(this).removeClass("batchStatusHover");
+			});			
+			
+			$('#dataLoadedId').change(function(){			
+				prevChatterDataLoaded = $(this).is(":checked") ? "true" : "false";
+				doChanges(prevChatterDataLoaded,contentBlocker,pmFreq,batchFreq);			
+			});
+			$('#deleteBlockerId').change(function(){
+				contentBlocker = $(this).is(":checked") ? "true" : "false"
+				doChanges(prevChatterDataLoaded,contentBlocker,pmFreq,batchFreq);
+			});			
+			$('.slcts').change(function(){
+				pmFreq = $(this).val();
+				doChanges(prevChatterDataLoaded,contentBlocker,pmFreq,batchFreq);			
+			});
+			$('.slctsBatchCG').change(function(){
+				batchFreq = $(this).val();
+				doChanges(prevChatterDataLoaded,contentBlocker,pmFreq,batchFreq);			
+			});
+			$('.batchStatus').click(function(){
+				startStopBatch( $(this).text() == "Stop Batch" ? "Stop" : "Start");
+			});			
+			configSetup();
+		});				
+	</script>
+
+<apex:outputPanel id="javascriptVals">
+	<script type="text/javascript">
+		ownerId 				= '{!JSENCODE(ownerId)}';
+		prevChatterDataLoaded 	= '{!JSENCODE(prevChatterDataLoaded)}';
+		contentBlocker 			= '{!JSENCODE(contentBlocker)}';
+		pmFreq 					= '{!JSENCODE(pmFreq)}' == "" ? "1" : '{!JSENCODE(pmFreq)}';
+		batchFreq				= '{!JSENCODE(batchFreq)}' == "" ? "1" : '{!JSENCODE(batchFreq)}';
+		batchStatus				= '{!JSENCODE(batchIsActive)}';	
+	</script>
+</apex:outputPanel>  
+
+	<div id="tabs">
+	<ul>
+		<li><a href="#tab-1">{!$Label.c_starthere}</a></li>
+		<li><a href="#tab-2">{!$Label.c_firststeps}</a></li>
+		<li><a href="#tab-3">{!$Label.c_privatemessages}</a></li>
+		<li><a href="#tab-4">{!$Label.c_searchexport}</a></li>
+		<li><a href="#tab-5">{!$Label.c_purge}</a></li>
+		<li><a href="#tab-6">{!$Label.c_configuration}</a></li>
+	</ul>
+
+	<div id="tab-1"><!-- Installation Notes --> {!$Label.ChatterAudit_aboutPage_Label99} <br />
+	
+	<apex:sectionHeader title="{!$Label.ChatterAudit_aboutPage_Label0}" /> 
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label01}">
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label1}" /></p>
+		<br />
+		<ul>
+			<li><apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label2}" /></li>
+			<li><apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label3}" /></li>
+			<li><apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label4}" /></li>
+			<li><apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label78}" /></li>
+		</ul>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label5}" /></p>
+		<br />		
+	</apex:pageBlock>
+	
+	</div>
+
+	<div id="tab-2"><!-- First Steps --> 
+	
+	<apex:pageBlock title="{!$Label.c_installationNotes}">
+	{!$Label.c_inotes}
+	<br />
+	{!$Label.c_inotes_p1} <br />
+	<br />
+	{!$Label.c_inotes_p2} <br />
+	<br />
+	<apex:image url="{!URLFOR($Resource.Config, 'chimages/crmcontent.jpg')}" />
+	</apex:pageBlock>	
+	
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label7}">
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label8}" /></p>			
+		<p  class="innerText">		
+		{!$Label.c_pmessages_p4} <br />
+	<br />
+	<apex:image url="{!URLFOR($Resource.Config, 'chimages/csettings1.jpg')}" /> <br />
+	<br />
+	{!$Label.c_pmessages_p5} <br />
+	<br />
+	<apex:image url="{!URLFOR($Resource.Config, 'chimages/csettings2.jpg')}" /> <br />
+	<br />		
+		</p>	
+			
+		<table>
+			<tr>
+				<td> 
+				<apex:image url="{!URLFOR($Resource.Config, 'chimages/cSetup1.png')}" />
+				</td>
+				</tr>
+				<tr>
+				<td>
+					<ol>
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label15}" /></li>					
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label18}" /></li>				
+						<li>{!$Label.ChatterAudit_aboutPage_Label79}</li>					
+						<li>{!$Label.ChatterAudit_aboutPage_Label80}</li>			
+						<li>{!$Label.ChatterAudit_aboutPage_Label81}</li>						
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label17}" /></li>					
+					<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label16}" /></li>					
+					<li> {!$Label.ChatterAudit_aboutPage_Label82}</li>					
+					</ol>					
+				</td>
+			</tr>
+		</table>		 
+		<hr />
+		<br />
+	</apex:pageBlock>
+	</div>
+
+	<div id="tab-3"><!-- Private Messages Batch --> 
+	 <br />
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label83}">
+	<p class="innerText">
+		<div class="contents">{!$Label.c_pmessages_p1} <br />
+		<br />
+		{!$Label.c_pmessages_p2} <br />
+		<br />
+		{!$Label.c_pmessages_p3} <br />
+		<br />
+		
+		<apex:image url="{!URLFOR($Resource.Config, 'chimages/csettings3.jpg')}" /> <br />
+		<br />
+		{!$Label.c_pmessages_p6} <br />
+		<br />
+		{!$Label.c_pmessages_p7} <br />
+		<br />
+		{!$Label.c_pmessages_p8} <br />
+		<br />
+		{!$Label.c_pmessages_p9} <br />
+		<br />
+		{!$Label.c_pmessages_p10} <br />
+		<br />
+		{!$Label.c_pmessages_p11} <br />
+		<br />
+		{!$Label.c_pmessages_p12}
+	</div>
+	
+	</p>	
+	</apex:pageBlock>
+	</div>
+	<div id="tab-4"><!-- Search & Export --> <apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label68}">
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label69} " /><br />
+		<apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label70} " /></p>
+		<br />
+		<table>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_pre_load.JPG')}" /></td>
+				<td style="width: 60%;"></td>
+			</tr>
+		</table>
+	</apex:pageBlock> 
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label24}">
+		<p class="title"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label25}" /></p>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label26}" /></p>
+		<br />
+
+		<table>
+			<tr>
+				<td  ><apex:image url="{!URLFOR($Resource.Config, 'chimages/cSearch1.png')}"  style="width: 850px;" /></td>
+				</tr>
+				<tr>
+				<td >
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label84}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label27}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label28}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label29}" /></li>
+				</ol>
+				</td>
+			</tr>
+		</table>
+		<br />
+		<hr />
+		<br />
+		<!--  INVOLVING 1 user  -->
+		<p class="title"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label30}" /></p>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label31}" /></p>
+		<br />
+		<table>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_one_user.JPG')}" /></td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label32}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label33}" />
+					<ul>
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label34}" /></li>
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label35}" /></li>
+					</ul>
+					</li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label36}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label37}" /></li>
+				</ol>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+				<p class="title"><apex:outputText escape="false"
+					value="{!$Label.ChatterAudit_aboutPage_Label38}" /></p>
+				<p class="innerText"><apex:outputText escape="false"
+					value="{!$Label.ChatterAudit_aboutPage_Label39}" /></p>
+				</td>
+			</tr>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_one_user_lookUp.JPG')}" />
+				</td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label40}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label41}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label42}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label43}" /></li>
+				</ol>
+				</td>
+			</tr>
+		</table>
+
+		<br />
+		<hr />
+		<br />
+		<!--  CONVERSATIONS DETAILS  -->
+		<p class="title"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label44}" /></p>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label45}" /></p>
+		<br />
+		<table>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_two_users.JPG')}" /></td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label46}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label47}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label48}" />
+					<ul>
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label49}" /></li>
+						<li><apex:outputText escape="false"
+							value="{!$Label.ChatterAudit_aboutPage_Label50}" /></li>
+					</ul>
+					</li>
+				</ol>
+				</td>
+			</tr>
+		</table>
+		<br />
+		<hr />
+		<br />
+		<!--  GROUPS DETAILS  -->
+		<p class="title"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label51}" /></p>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label52}" /></p>
+		<br />
+		<table>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_group.JPG')}" /></td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label53}" /></li>
+				</ol>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+				<p class="title"><apex:outputText escape="false"
+					value="{!$Label.ChatterAudit_aboutPage_Label54}" /></p>
+				<p class="innerText"><apex:outputText escape="false"
+					value="{!$Label.ChatterAudit_aboutPage_Label55}" /></p>
+				</td>
+			</tr>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.Config, 'chimages/cgroupsLookUp1.png')}" />
+				</td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label56}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label57}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label58}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label59}" /></li>
+				</ol>
+				</td>
+			</tr>
+		</table>
+		<br />
+		<hr />
+		<br />
+		<!--  GROUPS DETAILS  -->
+		<p class="title"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label60}" /></p>
+		<br />
+		<p class="innerText"><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label61}" /></p>
+		<br />
+		<table>
+			<tr>
+				<td style="width: 40%;"><apex:image url="{!URLFOR($Resource.AboutPage, 'search_export_results.JPG')}" />
+				</td>
+				<td style="width: 60%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label62}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label63}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label64}" /></li>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label65}" /></li>
+				</ol>
+				</td>
+			</tr>
+		</table>
+	</apex:pageBlock>
+	
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label74}">
+		<p class="innerText">
+			<ul>
+			<lil><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label75} " /></lil>
+			<li><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label76} " /></li>
+			<li><apex:outputText escape="false"
+			value="{!$Label.ChatterAudit_aboutPage_Label77} " /></li>
+			</ul>
+			
+		</p>
+		<br />
+	</apex:pageBlock>
+	
+	</div>
+
+	<div id="tab-5"><!-- Purge --> 
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label66}">
+		<p class="innerText">
+		
+		
+		<table>
+		
+			<tr>
+				<td colspan="2">
+				<apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label85}" />
+				<br/>
+				<apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label86}" />
+				<br/>
+				<apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label87}" />
+				<br/>
+				</td>
+			</tr>
+		
+			<tr>										 
+				<td style="width: 60%;"><apex:image url="{!URLFOR($Resource.Config, 'chimages/cpurge1.png')}" style="width:950px;"/></td>
+				<td style="width: 40%;">
+				<ol>
+					<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label88}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label89}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label90}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label91}D" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label92}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label93}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label94}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label95}" /></li>
+						<li><apex:outputText escape="false"
+						value="{!$Label.ChatterAudit_aboutPage_Label96}" /></li>
+				</ol>
+				</td>
+			</tr>
+			
+		</table>
+		
+		</p>
+		<br />
+	</apex:pageBlock>
+	
+	<apex:pageBlock title="{!$Label.ChatterAudit_aboutPage_Label97}">	
+		<table>		
+			<tr>										 
+				<td  ><apex:image url="{!URLFOR($Resource.Config, 'chimages/cpurge2.png')}" style="width:950px;"/></td>
+				</tr>
+				<tr>
+				<td  >
+				<p class="innerText"><apex:outputText escape="false"
+				value="{!$Label.ChatterAudit_aboutPage_Label98}" /></p>
+				</td>
+			</tr>
+		</table>	
+		<br />
+	</apex:pageBlock>
+	
+	</div>
+
+	<div id="tab-6"><!-- Custom Setting --> 
+	<apex:pageBlock title="Custom Settings">
+		<div class="customSettingContainer"> 
+			
+			<h1>{!$Label.c_arowner}</h1><br />
+			<span class="description">
+				{!$Label.c_text1}
+			</span><br/>
+			<div class="ownerIdContainer">0</div>
+			
+			<br/><div class="line-separator"></div><br/><br/>
+			
+			<h1>{!$Label.c_pcdl}</h1><br />
+			<span class="description">
+				{!$Label.c_text2} 
+			</span><br/>
+			<input type="checkbox" name="dataLoaded" value="Block" id="dataLoadedId" class="checks"/>
+			<span class="description">
+				{!$Label.c_pcdl}.
+			</span>
+			<br/>
+			
+			<br/><div class="line-separator"></div><br/><br/>
+			
+			<h1>{!$Label.c_cvdb}</h1><br/>
+			<input type="checkbox" name="deleteBlocker" value="Block" id="deleteBlockerId" class="checks"/>
+			<span class="description">
+				{!$Label.c_text3}
+			</span>
+			<br/>
+			
+			<br/><div class="line-separator"></div><br/><br/>
+			
+			<h1>{!$Label.c_pm}</h1><br/> 
+			<span class="description">
+				{!$Label.c_text4}<br/>
+				{!$Label.c_text5}				
+			</span><br/><br/>
+			<div class="pmCurrentUpdateFreq"></div><br/>
+			<select name="select_pmUpdateFreq" class="slcts">
+  				<option value="1">1</option>
+  				<option value="2">2</option>
+  				<option value="3">3</option>
+  				<option value="4">4</option>
+  				<option value="5">5</option>
+  				<option value="6">6</option>
+  				<option value="7">7</option>
+  				<option value="8">8</option>
+  				<option value="9">9</option>
+  				<option value="10">10</option>
+  				<option value="11">11</option>
+  				<option value="12">12</option>
+			</select> &nbsp;&nbsp; {!$Label.c_cuf}	<br/>
+			<div class="pmResetLastExecutionDate">Reset last execution date</div><br/>
+			
+			<br/><div class="line-separator"></div><br/><br/>
+			
+			<h1>{!JSENCODE($Label.ChatterAudit_aboutPage_Label73)}</h1><br/> 
+			<span class="description">
+				{!JSENCODE($Label.ChatterAudit_aboutPage_Label71)}
+				<br/>
+				{!JSENCODE($Label.ChatterAudit_aboutPage_Label72)}
+			</span><br/><br/>
+			<select name="select_BatchCG" class="slctsBatchCG">
+  				<option value="1">1</option>
+  				<option value="2">2</option>
+  				<option value="3">3</option>
+  				<option value="4">4</option>
+  				<option value="5">5</option>
+  				<option value="6">6</option>
+  				<option value="7">7</option>
+  				<option value="8">8</option>
+  				<option value="9">9</option>
+  				<option value="10">10</option>
+  				<option value="11">11</option>
+  				<option value="12">12</option>
+			</select> &nbsp;&nbsp; {!$Label.c_cuf}<br/><br/>
+			<div class="batchStatus">{!$Label.c_sbatch}</div><br/>		
+		
+		</div>
+	</apex:pageBlock>
+	</div>
+</div>
+
+<apex:form >
+	<apex:actionFunction name="doChangesAF"
+    	                 action="{!doChanges}"
+        	             rerender="javascriptVals"
+            	         oncomplete="requestComplete()">            	         
+            	         <apex:param name="prevChatterDataLoaded" value="" />
+            	         <apex:param name="contentBlocker" value="" />
+            	         <apex:param name="pmFreq" value="" />
+            	         <apex:param name="batchFreq" value="" />             	         
+    </apex:actionFunction>
+    <apex:actionFunction name="resetLastExecutionAF"
+    	                 action="{!resetLastExecution}"
+        	             rerender="javascriptVals"
+            	         oncomplete="requestComplete()">         	         
+    </apex:actionFunction>
+    <apex:actionFunction name="startStopBatchAF"
+    	                 action="{!startStopBatch}"
+        	             rerender="javascriptVals"
+            	         oncomplete="requestComplete()">
+            	         <apex:param name="startORstop" value="" />         	         
+    </apex:actionFunction>       
+</apex:form>
+</apex:page>
